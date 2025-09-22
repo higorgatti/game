@@ -181,7 +181,7 @@
         .territory-view {
             flex: 1;
             position: relative;
-            background-image: linear-gradient(rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0.3)), url('assets/territorio/mapa-territorio.jpg');
+            background-image: linear-gradient(rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0.3)), url('assets/territorio/mapa-territorio.jpg.jpg');
             background-size: cover;
             background-position: center;
             background-repeat: no-repeat;
@@ -694,55 +694,403 @@
 
         /* Mobile Responsive */
         @media (max-width: 768px) {
+            .header {
+                padding: 8px;
+            }
+
+            .header-top {
+                flex-direction: column;
+                gap: 10px;
+                margin-bottom: 8px;
+            }
+
+            .logo {
+                font-size: 18px;
+                text-align: center;
+            }
+
+            .alert-level {
+                font-size: 12px;
+                padding: 3px 10px;
+            }
+
+            .player-info {
+                flex-direction: column;
+                gap: 10px;
+                width: 100%;
+            }
+
+            .datetime {
+                font-size: 11px;
+                text-align: center;
+            }
+
+            .resources {
+                flex-wrap: wrap;
+                gap: 8px;
+                justify-content: center;
+                padding: 6px 10px;
+            }
+
+            .resource {
+                font-size: 12px;
+                min-width: 60px;
+            }
+
+            .resource-icon {
+                width: 16px;
+                height: 16px;
+                font-size: 10px;
+            }
+
+            .nav-tabs {
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+
+            .nav-tab {
+                padding: 8px 12px;
+                font-size: 12px;
+                flex: 1;
+                min-width: 80px;
+                text-align: center;
+            }
+
             .side-panel {
                 width: 100%;
-                height: 50vh;
+                height: 40vh;
                 position: fixed;
                 bottom: 0;
                 left: 0;
                 z-index: 100;
-                transform: translateY(calc(50vh - 60px));
+                transform: translateY(calc(40vh - 40px));
                 transition: transform 0.3s ease;
+                border-radius: 20px 20px 0 0;
+                max-height: 80vh;
+            }
+
+            .side-panel::before {
+                content: "⬆️ Toque para expandir";
+                position: absolute;
+                top: 10px;
+                left: 50%;
+                transform: translateX(-50%);
+                background: rgba(255, 215, 0, 0.9);
+                color: #000;
+                padding: 5px 15px;
+                border-radius: 15px;
+                font-size: 11px;
+                font-weight: bold;
+                z-index: 101;
             }
 
             .side-panel.expanded {
                 transform: translateY(0);
             }
 
+            .side-panel.expanded::before {
+                content: "⬇️ Toque para minimizar";
+            }
+
             .game-area {
-                padding-bottom: 60px;
-            }
-
-            .resources {
-                flex-wrap: wrap;
-                gap: 8px;
-            }
-
-            .nav-tabs {
-                flex-wrap: wrap;
+                padding-bottom: 50px;
             }
 
             .building-sprite {
-                width: 60px;
-                height: 60px;
-                font-size: 24px;
+                width: 50px;
+                height: 50px;
+                font-size: 20px;
+            }
+
+            .building-level {
+                width: 20px;
+                height: 20px;
+                font-size: 10px;
+                top: -8px;
+                right: -8px;
             }
 
             .tech-tree {
                 grid-template-columns: repeat(2, 1fr);
+                gap: 10px;
+            }
+
+            .tech-card {
+                padding: 15px;
             }
 
             .unit-grid {
                 grid-template-columns: 1fr;
+                gap: 10px;
             }
 
+            .unit-card {
+                padding: 12px;
+            }
+
+            .unit-icon {
+                font-size: 24px;
+            }
+
+            .modal-content {
+                width: 95%;
+                max-height: 90vh;
+                padding: 20px;
+                margin: 20px;
+            }
+
+            .modal-header {
+                font-size: 20px;
+            }
+
+            .action-btn, .upgrade-btn {
+                padding: 15px;
+                font-size: 14px;
+                margin: 8px 0;
+                min-height: 44px;
+            }
+
+            .game-input, .game-select {
+                padding: 12px;
+                font-size: 16px;
+                min-height: 44px;
+            }
+
+            .panel-section {
+                padding: 12px;
+                margin-bottom: 15px;
+            }
+
+            .panel-title {
+                font-size: 16px;
+            }
+
+            .building-stats {
+                grid-template-columns: 1fr;
+                gap: 8px;
+            }
+
+            .stat {
+                padding: 10px;
+                font-size: 13px;
+            }
+
+            .city-marker {
+                width: 30px;
+                height: 30px;
+                border-width: 3px;
+            }
+
+            .map-controls {
+                top: 10px;
+                right: 10px;
+                gap: 8px;
+            }
+
+            .map-control-btn {
+                width: 44px;
+                height: 44px;
+                font-size: 16px;
+            }
+
+            .tooltip {
+                max-width: 200px;
+                font-size: 11px;
+                padding: 10px;
+            }
+
+            .rival-operation {
+                flex-direction: column;
+                gap: 10px;
+                padding: 12px;
+            }
+
+            .rival-operation .action-btn {
+                width: 100%;
+            }
+
+            .loading-logo {
+                font-size: 32px;
+            }
+
+            .loading-bar {
+                width: 250px;
+            }
+
+            /* Territory View Mobile */
+            .territory-view {
+                padding: 10px;
+            }
+
+            .world-view {
+                padding: 10px;
+            }
+
+            .operations-view, .research-view {
+                padding: 15px;
+            }
+
+            .operation-section {
+                padding: 15px;
+                margin-bottom: 15px;
+            }
+
+            /* Improve touch targets */
+            .nav-tab, .action-btn, .upgrade-btn, .city-marker, .building {
+                min-height: 44px;
+                min-width: 44px;
+            }
+
+            /* Prevent zoom on input focus */
+            input, select, textarea {
+                font-size: 16px !important;
+            }
+
+            /* Better scrolling */
+            .side-panel, .modal-content, .operations-view, .research-view {
+                -webkit-overflow-scrolling: touch;
+            }
+        }
+
+        /* Extra small screens */
+        @media (max-width: 480px) {
             .logo {
-                font-size: 18px;
+                font-size: 16px;
             }
 
             .nav-tab {
-                padding: 8px 12px;
-                font-size: 12px;
+                padding: 6px 8px;
+                font-size: 11px;
+                min-width: 70px;
+            }
+
+            .resources {
+                gap: 6px;
+            }
+
+            .resource {
+                font-size: 11px;
+                min-width: 55px;
+            }
+
+            .building-sprite {
+                width: 40px;
+                height: 40px;
+                font-size: 18px;
+            }
+
+            .modal-content {
+                padding: 15px;
+                margin: 10px;
+            }
+
+            .action-btn, .upgrade-btn {
+                padding: 12px;
+                font-size: 13px;
+            }
+
+            .city-marker {
+                width: 25px;
+                height: 25px;
+            }
+
+            .map-control-btn {
+                width: 40px;
+                height: 40px;
+                font-size: 14px;
+            }
+
+            .tech-tree {
+                grid-template-columns: 1fr;
+            }
+
+            .side-panel {
+                height: 45vh;
+                transform: translateY(calc(45vh - 35px));
+            }
+        }
+
+        /* Touch-specific improvements */
+        @media (hover: none) and (pointer: coarse) {
+            .building:hover,
+            .city-marker:hover,
+            .action-btn:hover,
+            .nav-tab:hover {
+                transform: none;
+            }
+
+            .building:active,
+            .city-marker:active {
+                transform: scale(1.1);
+                transition: transform 0.1s ease;
+            }
+
+            .action-btn:active,
+            .upgrade-btn:active {
+                transform: translateY(-1px);
+                transition: transform 0.1s ease;
+            }
+
+            .nav-tab:active {
+                background: linear-gradient(135deg, #8B0000, #DC143C);
+                transition: background 0.1s ease;
+            }
+        }
+
+        /* Mobile-specific animations */
+        @media (max-width: 768px) {
+            .building {
+                transition: transform 0.2s ease;
+            }
+
+            .city-marker {
+                transition: transform 0.2s ease;
+            }
+
+            .action-btn, .upgrade-btn, .nav-tab {
+                transition: all 0.2s ease;
+            }
+
+            /* Reduce animations on mobile for better performance */
+            .resource-popup {
+                animation-duration: 1s;
+            }
+
+            .building-sprite::before {
+                animation: none;
+            }
+        }
+
+        /* Landscape orientation adjustments */
+        @media (max-width: 768px) and (orientation: landscape) {
+            .side-panel {
+                width: 50%;
+                height: 100vh;
+                right: 0;
+                bottom: auto;
+                left: auto;
+                transform: translateX(calc(50% - 40px));
+                border-radius: 20px 0 0 20px;
+            }
+
+            .side-panel.expanded {
+                transform: translateX(0);
+            }
+
+            .side-panel::before {
+                top: 50%;
+                left: 10px;
+                transform: translateY(-50%) rotate(-90deg);
+                content: "◀️";
+            }
+
+            .side-panel.expanded::before {
+                content: "▶️";
+            }
+
+            .game-area {
+                padding-bottom: 0;
+                padding-right: 50px;
             }
         }
 
@@ -1509,6 +1857,12 @@
         // Auto-save every 30 seconds
         setInterval(saveGame, 30000);
 
+        // Mobile touch support
+        let isMobile = /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+        let touchStartX = 0;
+        let touchStartY = 0;
+        let lastTouchTime = 0;
+
         // Initialize game
         function initGame() {
             loadGame();
@@ -1526,6 +1880,11 @@
             // Initialize with territory view only
             switchView('territory');
             
+            // Setup mobile-specific events
+            if (isMobile) {
+                setupMobileEvents();
+            }
+            
             setInterval(updateDateTime, 1000);
             setInterval(updateRiskLevel, 10000);
             setInterval(() => {
@@ -1533,6 +1892,123 @@
                     triggerRandomEvent();
                 }
             }, 45000);
+        }
+
+        function setupMobileEvents() {
+            // Prevent zoom on double tap
+            document.addEventListener('touchstart', function(e) {
+                const now = Date.now();
+                if (now - lastTouchTime <= 300) {
+                    e.preventDefault();
+                }
+                lastTouchTime = now;
+            }, { passive: false });
+
+            // Setup side panel mobile behavior
+            const sidePanel = document.getElementById('sidePanel');
+            let panelTouchStart = 0;
+            let panelStartY = 0;
+
+            sidePanel.addEventListener('touchstart', (e) => {
+                panelTouchStart = e.touches[0].clientY;
+                panelStartY = e.touches[0].clientY;
+            }, { passive: true });
+
+            sidePanel.addEventListener('touchmove', (e) => {
+                if (!sidePanel.classList.contains('expanded')) {
+                    const currentY = e.touches[0].clientY;
+                    const diff = panelStartY - currentY;
+                    
+                    if (diff > 30) { // Swipe up threshold
+                        sidePanel.classList.add('expanded');
+                    }
+                }
+            }, { passive: true });
+
+            // Click to toggle panel
+            sidePanel.addEventListener('click', (e) => {
+                if (e.target === sidePanel || e.target.closest('.panel-section')) {
+                    sidePanel.classList.toggle('expanded');
+                }
+            });
+
+            // Setup touch events for world map
+            setupWorldMapTouch();
+
+            // Improve building interaction on mobile
+            setupMobileBuildingEvents();
+        }
+
+        function setupWorldMapTouch() {
+            const worldView = document.getElementById('worldView');
+            let lastTouchDistance = 0;
+            let isZooming = false;
+
+            worldView.addEventListener('touchstart', (e) => {
+                if (e.touches.length === 2) {
+                    // Two finger touch - prepare for zoom
+                    isZooming = true;
+                    const touch1 = e.touches[0];
+                    const touch2 = e.touches[1];
+                    lastTouchDistance = Math.sqrt(
+                        Math.pow(touch2.clientX - touch1.clientX, 2) +
+                        Math.pow(touch2.clientY - touch1.clientY, 2)
+                    );
+                }
+            }, { passive: true });
+
+            worldView.addEventListener('touchmove', (e) => {
+                if (e.touches.length === 2 && isZooming) {
+                    e.preventDefault();
+                    const touch1 = e.touches[0];
+                    const touch2 = e.touches[1];
+                    const currentDistance = Math.sqrt(
+                        Math.pow(touch2.clientX - touch1.clientX, 2) +
+                        Math.pow(touch2.clientY - touch1.clientY, 2)
+                    );
+
+                    if (lastTouchDistance > 0) {
+                        const zoomFactor = currentDistance / lastTouchDistance;
+                        if (Math.abs(zoomFactor - 1) > 0.01) { // Threshold to prevent jitter
+                            zoomWorldMap(zoomFactor);
+                        }
+                    }
+                    lastTouchDistance = currentDistance;
+                }
+            }, { passive: false });
+
+            worldView.addEventListener('touchend', () => {
+                isZooming = false;
+                lastTouchDistance = 0;
+            }, { passive: true });
+        }
+
+        function setupMobileBuildingEvents() {
+            // Add haptic feedback simulation for mobile
+            function vibrateIfSupported(duration = 50) {
+                if (navigator.vibrate) {
+                    navigator.vibrate(duration);
+                }
+            }
+
+            // Override building selection for mobile
+            document.addEventListener('touchend', (e) => {
+                const building = e.target.closest('.building');
+                if (building && isMobile) {
+                    vibrateIfSupported(30);
+                    const buildingType = Array.from(building.classList).find(cls => 
+                        Object.keys(buildingTypes).includes(cls)
+                    );
+                    if (buildingType) {
+                        selectBuilding(buildingType);
+                    }
+                }
+
+                const cityMarker = e.target.closest('.city-marker');
+                if (cityMarker && isMobile) {
+                    vibrateIfSupported(20);
+                }
+            });
         }
 
         function updateDateTime() {
@@ -2702,15 +3178,53 @@
             tab.addEventListener('click', () => {
                 switchView(tab.dataset.tab);
             });
+            
+            // Add touch support for tabs
+            if (isMobile) {
+                tab.addEventListener('touchend', (e) => {
+                    e.preventDefault();
+                    switchView(tab.dataset.tab);
+                    if (navigator.vibrate) {
+                        navigator.vibrate(20);
+                    }
+                });
+            }
         });
 
-        // Mobile panel toggle
-        if (window.innerWidth <= 768) {
-            const panel = document.getElementById('sidePanel');
-            panel.addEventListener('click', () => {
-                panel.classList.toggle('expanded');
-            });
+        // Mobile panel toggle - improved
+        function setupMobilePanelToggle() {
+            if (window.innerWidth <= 768) {
+                const panel = document.getElementById('sidePanel');
+                
+                // Remove old event listeners
+                panel.removeEventListener('click', togglePanel);
+                
+                function togglePanel(e) {
+                    // Only toggle if clicking on panel itself or section headers
+                    if (e.target === panel || 
+                        e.target.closest('.panel-title') || 
+                        e.target.classList.contains('panel-section')) {
+                        panel.classList.toggle('expanded');
+                        if (navigator.vibrate) {
+                            navigator.vibrate(30);
+                        }
+                    }
+                }
+                
+                panel.addEventListener('click', togglePanel);
+                
+                // Close panel when clicking outside
+                document.addEventListener('click', (e) => {
+                    if (!panel.contains(e.target) && panel.classList.contains('expanded')) {
+                        panel.classList.remove('expanded');
+                    }
+                });
+            }
         }
+
+        // Initialize mobile panel on load and resize
+        window.addEventListener('load', setupMobilePanelToggle);
+        window.addEventListener('resize', setupMobilePanelToggle);
 
         // Close modal when clicking outside
         document.getElementById('gameModal').addEventListener('click', (e) => {
