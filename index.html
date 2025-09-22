@@ -1651,4 +1651,806 @@
         function startPoliceActivity() {
             setInterval(() => {
                 if (gameState.riskLevel > 70 && Math.random() < 0.3) {
-                    policeRai
+                    policeRaid();
+                }
+            }, 30000);
+        }
+
+        function policeRaid() {
+            const buildings = Object.keys(gameState.buildings);
+            const targetBuilding = buildings[Math.floor(Math.random() * buildings.length)];
+            const buildingEl = document.querySelector(`.building.${targetBuilding}`);
+            
+            if (buildingEl) {
+                buildingEl.classList.add('police-raid');
+                setTimeout(() => buildingEl.classList.remove('police-raid'), 3000);
+            }
+
+            const lossPercentage = 0.1 + (gameState.riskLevel / 1000);
+            Object.keys(gameState.resources).forEach(resource => {
+                const loss = Math.floor(gameState.resources[resource] * lossPercentage);
+                gameState.resources[resource] = Math.max(0, gameState.resources[resource] - loss);
+            });
+
+            gameState.riskLevel = Math.max(0, gameState.riskLevel - 20);
+            
+            updateResources();
+            saveGame();
+            showNotification('🚨 BATIDA POLICIAL! Recursos confiscados!');
+        }
+
+        function calculateProduction() {
+            let production = { drugs: 0, money: 0, weapons: 0, influence: 0 };
+
+            Object.entries(gameState.buildings).forEach(([type, building]) => {
+                const buildingType = buildingTypes[type];
+                Object.entries(buildingType.baseProduction).forEach(([resource, baseAmount]) => {
+                    if (production.hasOwnProperty(resource)) {
+                        let amount = Math.floor(baseAmount * building.level * 0.7);
+                        
+                        if (resource === 'drugs' && gameState.research.chemistry.completed) {
+                            amount *= 1.4;
+                        }
+                        if (resource === 'money' && gameState.research.distribution.completed) {
+                            amount *= 1.5;
+                        }
+                        
+                        production[resource] += Math.floor(amount);
+                    }
+                });
+            });
+
+            return production;
+        }
+
+        function switchView(viewName) {
+            document.querySelectorAll('.view').forEach(view => {
+                view.classList.remove('active');
+            });
+            
+            document.getElementById(viewName + 'View').classList.add('active');
+            gameState.currentView = viewName;
+            
+            document.querySelectorAll('.nav-tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            document.querySelector(`[data-tab="${viewName}"]`).classList.add('active');
+        }
+
+        function showResourcePopup(element, text, color) {
+            const popup = document.createElement('div');
+            popup.className = 'resource-popup';
+            popup.textContent = text;
+            popup.style.color = color;
+            popup.style.left = '50%';
+            popup.style.top = '0px';
+            
+            element.appendChild(popup);
+            
+            setTimeout(() => popup.remove(), 2000);
+        }
+
+        function showTooltip(e, type, data) {
+            const tooltip = document.createElement('div');
+            tooltip.className = 'tooltip';
+            
+            if (type === 'territory') {
+                tooltip.innerHTML = `
+                    <strong>${data.name}</strong><br>
+                    Controle: ${data.control}%<br>
+                    Tipo: ${data.type === 'player' ? 'Seu território' : 
+                            data.type === 'enemy' ? 'Território inimigo' : 
+                            data.type === 'cartel' ? 'Cartel aliado' : 'Neutro'}<br>
+                    ${data.type === 'enemy' ? 'Clique para atacar' : 
+                      data.type === 'neutral' ? 'Clique para expandir' : 'Clique para info'}
+                `;
+            } else {
+                const buildingType = buildingTypes[type];
+                tooltip.innerHTML = `
+                    <strong>${buildingType.icon} ${buildingType.name}</strong><br>
+                    Nível: ${data.level}<br>
+                    ${buildingType.description}<br>
+                    <em>Clique para gerenciar</em>
+                `;
+            }
+            
+            document.body.appendChild(tooltip);
+            
+            const rect = e.target.getBoundingClientRect();
+            tooltip.style.left = (rect.left + rect.width/2 - tooltip.offsetWidth/2) + 'px';
+            tooltip.style.top = (rect.top - tooltip.offsetHeight - 10) + 'px';
+        }
+
+        function hideTooltip() {
+            const tooltip = document.querySelector('.tooltip');
+            if (tooltip) tooltip.remove();
+        }
+
+        function showModal(title, content) {
+            document.getElementById('modalHeader').textContent = title;
+            document.getElementById('modalBody').innerHTML = content;
+            document.getElementById('gameModal').classList.add('active');
+        }
+
+        function closeModal() {
+            document.getElementById('gameModal').classList.remove('active');
+        }
+
+        function showBonusModal() {
+            showModal('💰 Operação Especial', `
+                <p>Uma oportunidade única surgiu! Aceite esta missão de alto risco para ganhar recursos valiosos.</p>
+                <div class="building-stats">
+                    <div class="stat">
+                        <div>Recompensa</div>
+                        <div>💰 $50K<br>💊 20kg<br>👑 10 inf</div>
+                    </div>
+                    <div class="stat">
+                        <div>Risco</div>
+                        <div>+15% Atenção<br>Policial</div>
+                    </div>
+                </div>
+                <button class="action-btn green-btn" onclick="acceptSpecialMission()">💎 Aceitar Missão</button>
+                <button class="action-btn" onclick="closeModal()">❌ Recusar</button>
+            `);
+        }
+
+        function acceptSpecialMission() {
+            gameState.resources.money += 50000;
+            gameState.resources.drugs += 20;
+            gameState.resources.influence += 10;
+            gameState.riskLevel += 15;
+            
+            updateResources();
+            updateRiskLevel();
+            saveGame();
+            showNotification('💰 Missão especial concluída! Recursos obtidos!');
+            closeModal();
+        }
+
+        function showResourceInfo(resource) {
+            const icons = { drugs: '💊', money: '💰', weapons: '🔫', influence: '👑' };
+            const names = { 
+                drugs: 'Drogas', 
+                money: 'Dinheiro', 
+                weapons: 'Armas', 
+                influence: 'Influência' 
+            };
+            const descriptions = {
+                drugs: 'Produto principal do cartel. Produzido em laboratórios e vendido nas ruas.',
+                money: 'Recurso fundamental para todas as operações. Obtido através de vendas e lavagem.',
+                weapons: 'Essencial para proteção e intimidação. Usado em confrontos e defesa territorial.',
+                influence: 'Poder político e social. Permite corrupção e expansão de território.'
+            };
+            
+            showModal(`${icons[resource]} ${names[resource]}`, `
+                <p>Quantidade atual: <strong>${gameState.resources[resource].toLocaleString()}</strong></p>
+                <p>Produção por hora: <strong>+${calculateProduction()[resource]}</strong></p>
+                <p>${descriptions[resource]}</p>
+                <div style="margin-top: 15px;">
+                    <button class="action-btn purple-btn" onclick="showMarketplace('${resource}')">🏪 Mercado Negro</button>
+                </div>
+            `);
+        }
+
+        function showMarketplace(resource) {
+            const prices = {
+                drugs: { buy: 1000, sell: 800 },
+                weapons: { buy: 2000, sell: 1500 },
+                influence: { buy: 5000, sell: 3000 }
+            };
+
+            if (!prices[resource]) {
+                showNotification('❌ Este recurso não pode ser comercializado!');
+                return;
+            }
+
+            showModal('🏪 Mercado Negro', `
+                <h3>Negociar ${resource.toUpperCase()}</h3>
+                <div class="building-stats">
+                    <div class="stat">
+                        <div>Preço de Compra</div>
+                        <div>${prices[resource].buy.toLocaleString()}</div>
+                    </div>
+                    <div class="stat">
+                        <div>Preço de Venda</div>
+                        <div>${prices[resource].sell.toLocaleString()}</div>
+                    </div>
+                </div>
+                <div>
+                    <input type="number" class="game-input" id="tradeAmount" placeholder="Quantidade" min="1" max="100" value="1">
+                    <button class="action-btn green-btn" onclick="buyResource('${resource}')">💰 Comprar</button>
+                    <button class="action-btn gold-btn" onclick="sellResource('${resource}')">💸 Vender</button>
+                </div>
+            `);
+        }
+
+        function buyResource(resource) {
+            const amount = parseInt(document.getElementById('tradeAmount').value) || 1;
+            const prices = { drugs: 1000, weapons: 2000, influence: 5000 };
+            const totalCost = prices[resource] * amount;
+            
+            if (gameState.resources.money >= totalCost) {
+                gameState.resources.money -= totalCost;
+                gameState.resources[resource] += amount;
+                gameState.riskLevel += amount * 2;
+                updateResources();
+                updateRiskLevel();
+                saveGame();
+                showNotification(`Comprou ${amount}x ${resource}!`);
+                closeModal();
+            } else {
+                showNotification('❌ Dinheiro insuficiente!');
+            }
+        }
+
+        function sellResource(resource) {
+            const amount = parseInt(document.getElementById('tradeAmount').value) || 1;
+            const prices = { drugs: 800, weapons: 1500, influence: 3000 };
+            
+            if (gameState.resources[resource] >= amount) {
+                gameState.resources[resource] -= amount;
+                gameState.resources.money += prices[resource] * amount;
+                updateResources();
+                saveGame();
+                showNotification(`Vendeu ${amount}x ${resource}!`);
+                closeModal();
+            } else {
+                showNotification('❌ Quantidade insuficiente!');
+            }
+        }
+
+        function showPoliceActivity() {
+            showModal('🚨 Atividade Policial', `
+                <h3>Relatório de Inteligência</h3>
+                <div class="rival-operation">
+                    <div>
+                        <strong>🔍 Operação "Quebra-Mola"</strong><br>
+                        <small>DEA investigando laboratórios na região sul</small><br>
+                        <small>⏰ Prazo: 3 dias</small>
+                    </div>
+                    <button class="action-btn purple-btn" onclick="sabotaguePolice()">🔧 Sabotar</button>
+                </div>
+                <div class="rival-operation">
+                    <div>
+                        <strong>👮 Patrulhamento Intensivo</strong><br>
+                        <small>Aumento de 40% na segurança local</small><br>
+                        <small>⏰ Duração: 2 dias</small>
+                    </div>
+                    <button class="action-btn gold-btn" onclick="bribePolice()">💰 Subornar</button>
+                </div>
+                <div style="margin-top: 20px;">
+                    <p><strong>💡 Dica:</strong> Reduza o nível de risco para evitar operações policiais.</p>
+                </div>
+            `);
+        }
+
+        function sabotaguePolice() {
+            if (gameState.resources.influence >= 20) {
+                gameState.resources.influence -= 20;
+                gameState.riskLevel = Math.max(0, gameState.riskLevel - 25);
+                updateResources();
+                updateRiskLevel();
+                saveGame();
+                showNotification('🔧 Operação policial sabotada!');
+                closeModal();
+            } else {
+                showNotification('❌ Influência insuficiente!');
+            }
+        }
+
+        function bribePolice() {
+            if (gameState.resources.money >= 75000) {
+                gameState.resources.money -= 75000;
+                gameState.riskLevel = Math.max(0, gameState.riskLevel - 40);
+                updateResources();
+                updateRiskLevel();
+                saveGame();
+                showNotification('💰 Policiais subornados com sucesso!');
+                closeModal();
+            } else {
+                showNotification('❌ Dinheiro insuficiente!');
+            }
+        }
+
+        function attackTerritory(territory) {
+            showModal('⚔️ Invasão de Território', `
+                <p>Você está prestes a atacar: <strong>${territory.name}</strong></p>
+                <p>Esta operação pode resultar em perdas, mas também em controle territorial!</p>
+                <div class="building-stats">
+                    <div class="stat">
+                        <div>Seu Poder</div>
+                        <div>${calculateMilitaryPower()}</div>
+                    </div>
+                    <div class="stat">
+                        <div>Risco</div>
+                        <div>+30% Atenção</div>
+                    </div>
+                </div>
+                <button class="action-btn" onclick="startTerritoryBattle('${territory.name}')">💀 Atacar!</button>
+                <button class="action-btn green-btn" onclick="closeModal()">🛡️ Cancelar</button>
+            `);
+        }
+
+        function calculateMilitaryPower() {
+            return (gameState.organization.enforcer * 25) + 
+                   (gameState.organization.lieutenant * 50) + 
+                   (gameState.resources.weapons * 10);
+        }
+
+        function startTerritoryBattle(targetName) {
+            const playerPower = calculateMilitaryPower();
+            const enemyPower = Math.random() * 800 + 400;
+            const victory = playerPower > enemyPower;
+            
+            document.body.classList.add('battle-animation');
+            setTimeout(() => document.body.classList.remove('battle-animation'), 2000);
+            
+            if (victory) {
+                const rewards = {
+                    money: Math.floor(Math.random() * 100000) + 50000,
+                    drugs: Math.floor(Math.random() * 50) + 20,
+                    influence: Math.floor(Math.random() * 25) + 15
+                };
+                
+                Object.entries(rewards).forEach(([resource, amount]) => {
+                    gameState.resources[resource] += amount;
+                });
+                
+                gameState.territoryControl += 15;
+                gameState.riskLevel += 30;
+                
+                updateResources();
+                updateRiskLevel();
+                saveGame();
+                
+                showModal('🎉 Território Conquistado!', `
+                    <p>Você dominou ${targetName}!</p>
+                    <p><strong>Recursos obtidos:</strong></p>
+                    <p>${formatCosts(rewards)}</p>
+                    <p>+15% controle territorial</p>
+                `);
+            } else {
+                Object.keys(gameState.organization).forEach(unit => {
+                    gameState.organization[unit] = Math.max(0, gameState.organization[unit] - Math.floor(Math.random() * 3));
+                });
+                gameState.members = Object.values(gameState.organization).reduce((sum, count) => sum + count, 0);
+                
+                updateResources();
+                renderOperations();
+                saveGame();
+                
+                showModal('😞 Ataque Fracassado', `
+                    <p>Sua tentativa de conquistar ${targetName} falhou!</p>
+                    <p>Alguns membros foram perdidos na batalha.</p>
+                    <p>Fortaleça sua organização e tente novamente!</p>
+                `);
+            }
+        }
+
+        function expandTerritory(territory) {
+            showModal('🏗️ Expansão Territorial', `
+                <p>Expandir para: <strong>${territory.name}</strong></p>
+                <p>Esta área neutra pode ser conquistada pacificamente através de influência.</p>
+                <div class="building-stats">
+                    <div class="stat">
+                        <div>Custo</div>
+                        <div>💰 $200K<br>👑 50 influência</div>
+                    </div>
+                    <div class="stat">
+                        <div>Benefício</div>
+                        <div>+20% território<br>+$5K/hora</div>
+                    </div>
+                </div>
+                <button class="action-btn gold-btn" onclick="performExpansion('${territory.name}')">🚀 Expandir</button>
+                <button class="action-btn" onclick="closeModal()">❌ Cancelar</button>
+            `);
+        }
+
+        function performExpansion(territoryName) {
+            if (gameState.resources.money >= 200000 && gameState.resources.influence >= 50) {
+                gameState.resources.money -= 200000;
+                gameState.resources.influence -= 50;
+                gameState.territoryControl += 20;
+                
+                updateResources();
+                saveGame();
+                showNotification(`🏗️ ${territoryName} conquistado pacificamente!`);
+                closeModal();
+            } else {
+                showNotification('❌ Recursos insuficientes para expansão!');
+            }
+        }
+
+        function showTerritoryInfo(territory) {
+            showModal(`🏢 ${territory.name}`, `
+                <p>Controle: <strong>${territory.control}%</strong></p>
+                <p>Status: <strong>${territory.type === 'player' ? 'Território controlado' : 'Território aliado'}</strong></p>
+                <div class="building-stats" style="margin: 15px 0;">
+                    <div class="stat">
+                        <div>Produção Diária</div>
+                        <div>${(territory.control * 100).toLocaleString()}</div>
+                    </div>
+                    <div class="stat">
+                        <div>Segurança</div>
+                        <div>${territory.control > 80 ? 'Alta' : territory.control > 50 ? 'Média' : 'Baixa'}</div>
+                    </div>
+                </div>
+                <p>Este território está sob seu controle e contribui para sua receita diária.</p>
+            `);
+        }
+
+        function deployUnit(unitType) {
+            showModal('🎯 Missão Especial', `
+                <h3>Destacar ${unitTypes[unitType].name}</h3>
+                <p>Escolha uma missão para seus ${unitTypes[unitType].name.toLowerCase()}s:</p>
+                <button class="action-btn purple-btn" onclick="sendMission('${unitType}', 'collect')">💰 Coletar Proteção</button>
+                <button class="action-btn gold-btn" onclick="sendMission('${unitType}', 'sabotage')">🔧 Sabotar Rivais</button>
+                <button class="action-btn green-btn" onclick="sendMission('${unitType}', 'expand')">🗺️ Explorar Território</button>
+                <button class="action-btn" onclick="closeModal()">❌ Cancelar</button>
+            `);
+        }
+
+        function sendMission(unitType, missionType) {
+            if (gameState.organization[unitType] <= 0) {
+                showNotification('❌ Nenhuma unidade disponível!');
+                return;
+            }
+
+            const missions = {
+                collect: { 
+                    reward: { money: 25000 }, 
+                    risk: 5, 
+                    name: 'Coleta de Proteção' 
+                },
+                sabotage: { 
+                    reward: { influence: 15 }, 
+                    risk: 15, 
+                    name: 'Sabotagem' 
+                },
+                expand: { 
+                    reward: { drugs: 10, money: 15000 }, 
+                    risk: 10, 
+                    name: 'Exploração' 
+                }
+            };
+
+            const mission = missions[missionType];
+            gameState.organization[unitType]--;
+            gameState.members--;
+            gameState.riskLevel += mission.risk;
+
+            Object.entries(mission.reward).forEach(([resource, amount]) => {
+                gameState.resources[resource] += amount;
+            });
+
+            updateResources();
+            updateRiskLevel();
+            renderOperations();
+            saveGame();
+            
+            showNotification(`✅ ${mission.name} iniciada! ${unitTypes[unitType].name} destacado.`);
+            closeModal();
+
+            setTimeout(() => {
+                gameState.organization[unitType]++;
+                gameState.members++;
+                renderOperations();
+                showNotification(`🔄 ${unitTypes[unitType].name} retornou da missão!`);
+                saveGame();
+            }, 15000);
+        }
+
+        function showCartelStats() {
+            const totalProduction = calculateProduction();
+            const dailyIncome = (totalProduction.money * 24);
+            
+            showModal('📊 Relatório Completo do Cartel', `
+                <h3>Estatísticas Detalhadas</h3>
+                <div class="building-stats">
+                    <div class="stat">
+                        <div>Receita Diária</div>
+                        <div>${dailyIncome.toLocaleString()}</div>
+                    </div>
+                    <div class="stat">
+                        <div>Eficiência</div>
+                        <div>${Math.floor(gameState.reputation * 10)}%</div>
+                    </div>
+                    <div class="stat">
+                        <div>Território</div>
+                        <div>${gameState.territoryControl}%</div>
+                    </div>
+                    <div class="stat">
+                        <div>Poder Militar</div>
+                        <div>${calculateMilitaryPower()}</div>
+                    </div>
+                </div>
+                <h4>Distribuição de Membros:</h4>
+                <div class="building-stats">
+                    ${Object.entries(gameState.organization).map(([unit, count]) => `
+                        <div class="stat">
+                            <div>${unitTypes[unit].name}</div>
+                            <div>${count}</div>
+                        </div>
+                    `).join('')}
+                </div>
+                <p style="margin-top: 15px;"><strong>Próxima Meta:</strong> Alcançar ranking #1 e controlar 100% do território!</p>
+                <button class="action-btn purple-btn" onclick="resetGame()">🔄 Resetar Progresso</button>
+            `);
+        }
+
+        function resetGame() {
+            if (confirm('⚠️ Tem certeza que deseja resetar todo o progresso?')) {
+                localStorage.removeItem('cartelEmpire');
+                location.reload();
+            }
+        }
+
+        function showIntelReport() {
+            showModal('📊 Relatório de Inteligência', `
+                <h3>Atividade dos Rivais</h3>
+                <div class="rival-operation">
+                    <div>
+                        <strong>🏴‍☠️ Los Hermanos</strong><br>
+                        <small>Movimento suspeito no porto norte</small><br>
+                        <small>Threat Level: Alto</small>
+                    </div>
+                </div>
+                <div class="rival-operation">
+                    <div>
+                        <strong>🎯 Máfia Italiana</strong><br>
+                        <small>Expandindo operações de lavagem</small><br>
+                        <small>Threat Level: Médio</small>
+                    </div>
+                </div>
+                <div class="rival-operation">
+                    <div>
+                        <strong>⚔️ Gangue Rival</strong><br>
+                        <small>Recrutamento massivo em andamento</small><br>
+                        <small>Threat Level: Baixo</small>
+                    </div>
+                </div>
+                <p style="margin-top: 15px;"><strong>Recomendação:</strong> Fortaleça defesas e considere ataques preventivos.</p>
+            `);
+        }
+
+        function showMarketAnalysis() {
+            showModal('📈 Análise de Mercado', `
+                <h3>Tendências do Mercado Negro</h3>
+                <div class="building-stats">
+                    <div class="stat">
+                        <div>💊 Demanda de Drogas</div>
+                        <div style="color: #32CD32;">📈 +15%</div>
+                    </div>
+                    <div class="stat">
+                        <div>🔫 Preço das Armas</div>
+                        <div style="color: #FF6347;">📉 -8%</div>
+                    </div>
+                    <div class="stat">
+                        <div>👑 Valor da Influência</div>
+                        <div style="color: #32CD32;">📈 +22%</div>
+                    </div>
+                    <div class="stat">
+                        <div>🚨 Atividade Policial</div>
+                        <div style="color: #FFD700;">📊 Estável</div>
+                    </div>
+                </div>
+                <div style="margin-top: 20px;">
+                    <h4>Oportunidades:</h4>
+                    <p>• Alta demanda por drogas sintéticas</p>
+                    <p>• Preços baixos de armas = boa hora para comprar</p>
+                    <p>• Influência política em alta valorização</p>
+                </div>
+            `);
+        }
+
+        function triggerRandomEvent() {
+            const events = [
+                {
+                    title: '🎯 Oportunidade de Negócio',
+                    message: 'Um novo cliente quer fazer um pedido grande de 30kg!',
+                    requirement: 'drugs >= 30',
+                    action: () => {
+                        if (gameState.resources.drugs >= 30) {
+                            gameState.resources.money += 45000;
+                            gameState.resources.drugs -= 30;
+                            gameState.riskLevel += 10;
+                            updateResources();
+                            updateRiskLevel();
+                            saveGame();
+                            showNotification('💰 Grande negócio fechado! +$45K, -30kg drogas');
+                        } else {
+                            showNotification('❌ Drogas insuficientes para o pedido!');
+                        }
+                    }
+                },
+                {
+                    title: '🔍 Informante',
+                    message: 'Um policial corrupto oferece informações sobre operação planejada.',
+                    requirement: 'money >= 15000',
+                    action: () => {
+                        if (gameState.resources.money >= 15000) {
+                            gameState.riskLevel = Math.max(0, gameState.riskLevel - 25);
+                            gameState.resources.money -= 15000;
+                            updateResources();
+                            updateRiskLevel();
+                            saveGame();
+                            showNotification('🕵️ Intel valiosa obtida! -$15K, risco reduzido');
+                        } else {
+                            showNotification('❌ Dinheiro insuficiente para pagar informante!');
+                        }
+                    }
+                },
+                {
+                    title: '⚔️ Conflito Territorial',
+                    message: 'Rivais atacaram um de seus pontos de venda!',
+                    requirement: 'none',
+                    action: () => {
+                        const losses = Math.floor(Math.random() * 8000) + 3000;
+                        const weaponLoss = Math.min(5, gameState.resources.weapons);
+                        gameState.resources.money = Math.max(0, gameState.resources.money - losses);
+                        gameState.resources.weapons = Math.max(0, gameState.resources.weapons - weaponLoss);
+                        updateResources();
+                        saveGame();
+                        showNotification(`💥 Ataque sofrido! -${losses.toLocaleString()}, -${weaponLoss} armas`);
+                    }
+                },
+                {
+                    title: '💎 Contrato Especial',
+                    message: 'Um político corrupto oferece proteção em troca de influência.',
+                    requirement: 'influence >= 25',
+                    action: () => {
+                        if (gameState.resources.influence >= 25) {
+                            gameState.resources.influence -= 25;
+                            gameState.riskLevel = Math.max(0, gameState.riskLevel - 30);
+                            gameState.territoryControl += 10;
+                            updateResources();
+                            updateRiskLevel();
+                            saveGame();
+                            showNotification('🤝 Proteção política adquirida! +10% território');
+                        } else {
+                            showNotification('❌ Influência insuficiente para o contrato!');
+                        }
+                    }
+                }
+            ];
+
+            const randomEvent = events[Math.floor(Math.random() * events.length)];
+            
+            showModal('📰 Evento Inesperado', `
+                <h3>${randomEvent.title}</h3>
+                <p>${randomEvent.message}</p>
+                ${randomEvent.requirement !== 'none' ? `<p><small>Requisito: ${randomEvent.requirement.replace('>=', ' mínimo ')}</small></p>` : ''}
+                <button class="action-btn gold-btn" onclick="handleRandomEvent(${events.indexOf(randomEvent)})">✅ Aceitar</button>
+                <button class="action-btn" onclick="closeModal()">❌ Ignorar</button>
+            `);
+        }
+
+        function handleRandomEvent(eventIndex) {
+            const events = [
+                () => {
+                    if (gameState.resources.drugs >= 30) {
+                        gameState.resources.money += 45000;
+                        gameState.resources.drugs -= 30;
+                        gameState.riskLevel += 10;
+                        updateResources();
+                        updateRiskLevel();
+                        saveGame();
+                        showNotification('💰 Grande negócio fechado! +$45K, -30kg drogas');
+                    } else {
+                        showNotification('❌ Drogas insuficientes para o pedido!');
+                    }
+                },
+                () => {
+                    if (gameState.resources.money >= 15000) {
+                        gameState.riskLevel = Math.max(0, gameState.riskLevel - 25);
+                        gameState.resources.money -= 15000;
+                        updateResources();
+                        updateRiskLevel();
+                        saveGame();
+                        showNotification('🕵️ Intel valiosa obtida! -$15K, risco reduzido');
+                    } else {
+                        showNotification('❌ Dinheiro insuficiente para pagar informante!');
+                    }
+                },
+                () => {
+                    const losses = Math.floor(Math.random() * 8000) + 3000;
+                    const weaponLoss = Math.min(5, gameState.resources.weapons);
+                    gameState.resources.money = Math.max(0, gameState.resources.money - losses);
+                    gameState.resources.weapons = Math.max(0, gameState.resources.weapons - weaponLoss);
+                    updateResources();
+                    saveGame();
+                    showNotification(`💥 Ataque sofrido! -${losses.toLocaleString()}, -${weaponLoss} armas`);
+                },
+                () => {
+                    if (gameState.resources.influence >= 25) {
+                        gameState.resources.influence -= 25;
+                        gameState.riskLevel = Math.max(0, gameState.riskLevel - 30);
+                        gameState.territoryControl += 10;
+                        updateResources();
+                        updateRiskLevel();
+                        saveGame();
+                        showNotification('🤝 Proteção política adquirida! +10% território');
+                    } else {
+                        showNotification('❌ Influência insuficiente para o contrato!');
+                    }
+                }
+            ];
+            
+            events[eventIndex]();
+            closeModal();
+        }
+
+        function showNotification(message) {
+            const notification = document.createElement('div');
+            notification.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                background: linear-gradient(135deg, #8B0000, #DC143C);
+                color: #FFD700;
+                padding: 15px 20px;
+                border-radius: 10px;
+                box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+                z-index: 1001;
+                font-weight: bold;
+                animation: slideIn 0.3s ease;
+                border: 2px solid #FFD700;
+                max-width: 300px;
+            `;
+            notification.textContent = message;
+            
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                notification.style.animation = 'slideOut 0.3s ease';
+                setTimeout(() => notification.remove(), 300);
+            }, 4000);
+        }
+
+        // Tab switching
+        document.querySelectorAll('.nav-tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                switchView(tab.dataset.tab);
+            });
+        });
+
+        // Mobile panel toggle
+        if (window.innerWidth <= 768) {
+            const panel = document.getElementById('sidePanel');
+            panel.addEventListener('click', () => {
+                panel.classList.toggle('expanded');
+            });
+        }
+
+        // Close modal when clicking outside
+        document.getElementById('gameModal').addEventListener('click', (e) => {
+            if (e.target === e.currentTarget) {
+                closeModal();
+            }
+        });
+
+        // Add CSS animations for notifications
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes slideIn {
+                from { transform: translateX(100%); opacity: 0; }
+                to { transform: translateX(0); opacity: 1; }
+            }
+            @keyframes slideOut {
+                from { transform: translateX(0); opacity: 1; }
+                to { transform: translateX(100%); opacity: 0; }
+            }
+            .battle-animation {
+                animation: battleShake 0.5s infinite;
+            }
+            @keyframes battleShake {
+                0%, 100% { transform: translate(0); }
+                25% { transform: translate(-2px, -2px); }
+                50% { transform: translate(2px, -2px); }
+                75% { transform: translate(-2px, 2px); }
+            }
+        `;
+        document.head.appendChild(style);
+    </script>
+</body>
+</html>
