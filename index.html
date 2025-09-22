@@ -1,0 +1,1654 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cartel Empire - Underground Kingdom</title>
+    <meta name="description" content="Jogo de estratégia onde você constrói e gerencia seu próprio cartel criminoso">
+    <meta name="keywords" content="jogo, estratégia, cartel, crime, simulação">
+    <meta name="author" content="Cartel Empire Team">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(45deg, #1a1a1a, #2d2d2d, #000);
+            color: #fff;
+            overflow: hidden;
+        }
+
+        .game-container {
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Header */
+        .header {
+            background: linear-gradient(135deg, #8B0000, #DC143C, #000);
+            border-bottom: 3px solid #FFD700;
+            padding: 10px;
+            box-shadow: 0 2px 15px rgba(220, 20, 60, 0.5);
+        }
+
+        .header-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .logo {
+            color: #FFD700;
+            font-size: 24px;
+            font-weight: bold;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .player-info {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+        }
+
+        .datetime {
+            color: #FFD700;
+            font-size: 12px;
+            background: rgba(0,0,0,0.6);
+            padding: 5px 10px;
+            border-radius: 5px;
+            border: 1px solid #DC143C;
+        }
+
+        .resources {
+            display: flex;
+            gap: 15px;
+            background: rgba(139, 0, 0, 0.8);
+            padding: 8px 15px;
+            border-radius: 20px;
+            border: 2px solid #FFD700;
+            box-shadow: 0 0 20px rgba(255, 215, 0, 0.3);
+        }
+
+        .resource {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .resource:hover {
+            transform: scale(1.05);
+        }
+
+        .resource-icon {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+        }
+
+        .drugs { background: #9932CC; }
+        .money { background: #228B22; color: #000; }
+        .weapons { background: #8B0000; }
+        .influence { background: #FFD700; color: #000; }
+
+        /* Alert System */
+        .alert-level {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: rgba(255, 0, 0, 0.2);
+            padding: 5px 15px;
+            border-radius: 15px;
+            border: 2px solid #FF0000;
+            color: #FF6347;
+            font-weight: bold;
+        }
+
+        .alert-high {
+            animation: alertBlink 1s infinite;
+        }
+
+        @keyframes alertBlink {
+            0%, 50% { opacity: 1; }
+            51%, 100% { opacity: 0.5; }
+        }
+
+        /* Navigation */
+        .nav-tabs {
+            display: flex;
+            gap: 0;
+            flex-wrap: wrap;
+        }
+
+        .nav-tab {
+            background: linear-gradient(135deg, #2F4F4F, #696969);
+            border: 2px solid #8B0000;
+            border-bottom: none;
+            padding: 10px 15px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            color: #FFD700;
+            font-weight: bold;
+            position: relative;
+            font-size: 14px;
+        }
+
+        .nav-tab:hover {
+            background: linear-gradient(135deg, #696969, #A9A9A9);
+            transform: translateY(-2px);
+        }
+
+        .nav-tab.active {
+            background: linear-gradient(135deg, #8B0000, #DC143C);
+            color: #FFD700;
+            box-shadow: 0 2px 15px rgba(220, 20, 60, 0.5);
+        }
+
+        /* Main Game Area */
+        .game-area {
+            flex: 1;
+            display: flex;
+            position: relative;
+        }
+
+        .view {
+            display: none;
+        }
+
+        .view.active {
+            display: flex;
+            flex: 1;
+        }
+
+        /* Territory View */
+        .territory-view {
+            flex: 1;
+            position: relative;
+            background: linear-gradient(135deg, #1a1a1a, #2d2d2d);
+            background-image: 
+                radial-gradient(circle at 20% 20%, rgba(220, 20, 60, 0.1) 2px, transparent 2px),
+                radial-gradient(circle at 80% 80%, rgba(255, 215, 0, 0.1) 1px, transparent 1px);
+        }
+
+        /* World Map View */
+        .world-view {
+            flex: 1;
+            position: relative;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="citymap" patternUnits="userSpaceOnUse" width="20" height="20"><rect width="20" height="20" fill="%23111"/><rect x="5" y="5" width="2" height="2" fill="%23333" opacity="0.5"/><rect x="15" y="15" width="2" height="2" fill="%23333" opacity="0.5"/></pattern></defs><rect width="100" height="100" fill="url(%23citymap)"/></svg>') repeat;
+            overflow: hidden;
+        }
+
+        .territory {
+            position: absolute;
+            width: 80px;
+            height: 80px;
+            background: linear-gradient(135deg, #2F4F4F, #000);
+            border-radius: 10px;
+            border: 3px solid #8B0000;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+        }
+
+        .territory:hover {
+            transform: scale(1.1);
+            box-shadow: 0 6px 20px rgba(220, 20, 60, 0.4);
+        }
+
+        .territory.player {
+            border-color: #FFD700;
+            box-shadow: 0 0 20px rgba(255, 215, 0, 0.5);
+        }
+
+        .territory.enemy {
+            border-color: #FF4500;
+        }
+
+        .territory.neutral {
+            border-color: #696969;
+        }
+
+        .territory.cartel {
+            border-color: #9932CC;
+        }
+
+        /* Operations View */
+        .operations-view {
+            flex: 1;
+            background: linear-gradient(135deg, #2F4F4F, #000);
+            padding: 20px;
+            overflow-y: auto;
+        }
+
+        .operation-section {
+            background: rgba(255,255,255,0.1);
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+            border: 2px solid #8B0000;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+        }
+
+        .unit-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .unit-card {
+            background: linear-gradient(135deg, #1a1a1a, #2d2d2d);
+            border: 2px solid #8B0000;
+            border-radius: 15px;
+            padding: 15px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            color: #fff;
+        }
+
+        .unit-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(220, 20, 60, 0.3);
+            border-color: #DC143C;
+        }
+
+        .unit-icon {
+            font-size: 30px;
+            margin-bottom: 10px;
+        }
+
+        /* Research View */
+        .research-view {
+            flex: 1;
+            background: linear-gradient(135deg, #191970, #000080);
+            padding: 20px;
+            overflow-y: auto;
+        }
+
+        .tech-tree {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 20px;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .tech-card {
+            background: rgba(255,255,255,0.1);
+            border-radius: 15px;
+            padding: 20px;
+            text-align: center;
+            border: 2px solid #8B0000;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            color: #fff;
+        }
+
+        .tech-card.researched {
+            background: linear-gradient(135deg, #228B22, #006400);
+            border-color: #32CD32;
+        }
+
+        .tech-card.locked {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .tech-card:hover:not(.locked) {
+            transform: scale(1.05);
+            box-shadow: 0 8px 25px rgba(220, 20, 60, 0.4);
+        }
+
+        /* Buildings */
+        .building {
+            position: absolute;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            transform-style: preserve-3d;
+        }
+
+        .building:hover {
+            transform: scale(1.1) translateZ(10px);
+            filter: brightness(1.2);
+        }
+
+        .building-sprite {
+            width: 80px;
+            height: 80px;
+            border-radius: 15px;
+            border: 2px solid #8B0000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 30px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .building-sprite::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(45deg, transparent 30%, rgba(255,215,0,0.2) 50%, transparent 70%);
+            animation: shine 4s infinite;
+        }
+
+        @keyframes shine {
+            0%, 100% { transform: translateX(-100%); }
+            50% { transform: translateX(100%); }
+        }
+
+        .headquarters { background: linear-gradient(135deg, #8B0000, #DC143C); }
+        .lab { background: linear-gradient(135deg, #9932CC, #4B0082); }
+        .warehouse { background: linear-gradient(135deg, #2F4F4F, #696969); }
+        .safehouse { background: linear-gradient(135deg, #8B4513, #A0522D); }
+        .dealership { background: linear-gradient(135deg, #228B22, #006400); }
+        .armory { background: linear-gradient(135deg, #B22222, #8B0000); }
+        .laundry { background: linear-gradient(135deg, #DAA520, #B8860B); }
+        .lookout { background: linear-gradient(135deg, #4682B4, #1E90FF); }
+
+        .building-level {
+            position: absolute;
+            top: -10px;
+            right: -10px;
+            background: #FFD700;
+            color: #000;
+            border-radius: 50%;
+            width: 25px;
+            height: 25px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: bold;
+            border: 2px solid #8B0000;
+        }
+
+        /* Side Panel */
+        .side-panel {
+            width: 320px;
+            background: linear-gradient(135deg, #1a1a1a, #2d2d2d);
+            border-left: 3px solid #8B0000;
+            padding: 20px;
+            overflow-y: auto;
+            box-shadow: -5px 0 15px rgba(0,0,0,0.5);
+        }
+
+        .panel-section {
+            background: rgba(255,255,255,0.1);
+            margin-bottom: 20px;
+            border-radius: 15px;
+            padding: 15px;
+            border: 2px solid #8B0000;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+        }
+
+        .panel-title {
+            font-size: 18px;
+            font-weight: bold;
+            color: #FFD700;
+            margin-bottom: 10px;
+            text-align: center;
+            text-transform: uppercase;
+        }
+
+        .building-info h3 {
+            color: #DC143C;
+            margin-bottom: 10px;
+        }
+
+        .building-stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin: 10px 0;
+        }
+
+        .stat {
+            background: rgba(0,0,0,0.5);
+            padding: 8px;
+            border-radius: 8px;
+            text-align: center;
+            border: 1px solid #8B0000;
+            color: #fff;
+        }
+
+        .upgrade-btn, .action-btn {
+            width: 100%;
+            background: linear-gradient(135deg, #8B0000, #DC143C);
+            border: none;
+            padding: 12px;
+            border-radius: 8px;
+            color: #FFD700;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(139, 0, 0, 0.4);
+            margin: 5px 0;
+        }
+
+        .upgrade-btn:hover, .action-btn:hover {
+            background: linear-gradient(135deg, #DC143C, #B22222);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(220, 20, 60, 0.5);
+        }
+
+        .upgrade-btn:disabled, .action-btn:disabled {
+            background: #666;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .green-btn {
+            background: linear-gradient(135deg, #228B22, #006400) !important;
+            box-shadow: 0 4px 15px rgba(34, 139, 34, 0.4) !important;
+        }
+
+        .green-btn:hover {
+            background: linear-gradient(135deg, #006400, #004d00) !important;
+        }
+
+        .purple-btn {
+            background: linear-gradient(135deg, #9932CC, #4B0082) !important;
+            box-shadow: 0 4px 15px rgba(153, 50, 204, 0.4) !important;
+        }
+
+        .gold-btn {
+            background: linear-gradient(135deg, #DAA520, #B8860B) !important;
+            color: #000 !important;
+            box-shadow: 0 4px 15px rgba(218, 165, 32, 0.4) !important;
+        }
+
+        /* Input fields */
+        .game-input {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #8B0000;
+            border-radius: 8px;
+            font-size: 14px;
+            margin: 5px 0;
+            background: rgba(0,0,0,0.7);
+            color: #fff;
+        }
+
+        .game-select {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #8B0000;
+            border-radius: 8px;
+            font-size: 14px;
+            margin: 5px 0;
+            background: rgba(0,0,0,0.7);
+            color: #fff;
+        }
+
+        /* Risk Level */
+        .risk-meter {
+            width: 100%;
+            height: 25px;
+            background: #333;
+            border-radius: 15px;
+            overflow: hidden;
+            margin: 10px 0;
+            border: 2px solid #8B0000;
+        }
+
+        .risk-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #228B22, #FFD700, #FF4500, #DC143C);
+            transition: width 0.3s ease;
+        }
+
+        /* Animations */
+        @keyframes buildingPulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        .upgrading {
+            animation: buildingPulse 1s infinite;
+        }
+
+        .police-raid {
+            animation: policeFlash 0.5s infinite;
+        }
+
+        @keyframes policeFlash {
+            0%, 50% { background: rgba(255, 0, 0, 0.3); }
+            51%, 100% { background: rgba(0, 0, 255, 0.3); }
+        }
+
+        /* Resource Production Animation */
+        .resource-popup {
+            position: absolute;
+            pointer-events: none;
+            color: #FFD700;
+            font-weight: bold;
+            font-size: 14px;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
+            animation: resourceFloat 2s ease-out forwards;
+        }
+
+        @keyframes resourceFloat {
+            0% {
+                opacity: 1;
+                transform: translateY(0);
+            }
+            100% {
+                opacity: 0;
+                transform: translateY(-50px);
+            }
+        }
+
+        /* Tooltip */
+        .tooltip {
+            position: absolute;
+            background: rgba(0,0,0,0.9);
+            color: #FFD700;
+            padding: 15px;
+            border-radius: 8px;
+            font-size: 12px;
+            pointer-events: none;
+            z-index: 1000;
+            max-width: 250px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.8);
+            border: 2px solid #8B0000;
+        }
+
+        /* Modal */
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.9);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: linear-gradient(135deg, #1a1a1a, #2d2d2d);
+            border-radius: 20px;
+            padding: 30px;
+            max-width: 600px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+            border: 3px solid #8B0000;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+            position: relative;
+            color: #fff;
+        }
+
+        .modal-header {
+            text-align: center;
+            font-size: 24px;
+            color: #FFD700;
+            margin-bottom: 20px;
+            font-weight: bold;
+        }
+
+        .close-btn {
+            position: absolute;
+            top: 15px;
+            right: 20px;
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: #FFD700;
+        }
+
+        /* Rival Operations */
+        .rival-operation {
+            background: rgba(220, 20, 60, 0.2);
+            border: 2px solid #DC143C;
+            border-radius: 10px;
+            padding: 15px;
+            margin: 10px 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        /* Mobile Responsive */
+        @media (max-width: 768px) {
+            .side-panel {
+                width: 100%;
+                height: 50vh;
+                position: fixed;
+                bottom: 0;
+                left: 0;
+                z-index: 100;
+                transform: translateY(calc(50vh - 60px));
+                transition: transform 0.3s ease;
+            }
+
+            .side-panel.expanded {
+                transform: translateY(0);
+            }
+
+            .game-area {
+                padding-bottom: 60px;
+            }
+
+            .resources {
+                flex-wrap: wrap;
+                gap: 8px;
+            }
+
+            .nav-tabs {
+                flex-wrap: wrap;
+            }
+
+            .building-sprite {
+                width: 60px;
+                height: 60px;
+                font-size: 24px;
+            }
+
+            .tech-tree {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .unit-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .logo {
+                font-size: 18px;
+            }
+
+            .nav-tab {
+                padding: 8px 12px;
+                font-size: 12px;
+            }
+        }
+
+        /* Loading Screen */
+        .loading-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #000, #1a1a1a);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 10000;
+            color: #FFD700;
+        }
+
+        .loading-logo {
+            font-size: 48px;
+            margin-bottom: 30px;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.7; transform: scale(1.1); }
+        }
+
+        .loading-bar {
+            width: 300px;
+            height: 6px;
+            background: #333;
+            border-radius: 3px;
+            overflow: hidden;
+            margin-bottom: 20px;
+        }
+
+        .loading-progress {
+            height: 100%;
+            background: linear-gradient(90deg, #8B0000, #DC143C);
+            animation: loading 3s ease-out forwards;
+        }
+
+        @keyframes loading {
+            0% { width: 0%; }
+            100% { width: 100%; }
+        }
+    </style>
+</head>
+<body>
+    <!-- Loading Screen -->
+    <div class="loading-screen" id="loadingScreen">
+        <div class="loading-logo">💀 CARTEL EMPIRE</div>
+        <div class="loading-bar">
+            <div class="loading-progress"></div>
+        </div>
+        <div>Carregando operações criminosas...</div>
+    </div>
+
+    <div class="game-container" style="display: none;" id="gameContainer">
+        <!-- Header -->
+        <div class="header">
+            <div class="header-top">
+                <div class="logo" onclick="showBonusModal()">
+                    💀 CARTEL EMPIRE
+                    <div class="alert-level" id="alertLevel">
+                        🚨 RISCO: <span id="riskLevel">BAIXO</span>
+                    </div>
+                </div>
+                <div class="player-info">
+                    <div class="datetime" id="datetime"></div>
+                    <div class="resources">
+                        <div class="resource" onclick="showResourceInfo('drugs')">
+                            <div class="resource-icon drugs">💊</div>
+                            <span id="drugs">50</span>kg
+                        </div>
+                        <div class="resource" onclick="showResourceInfo('money')">
+                            <div class="resource-icon money">💰</div>
+                            <span id="money">25000</span>
+                        </div>
+                        <div class="resource" onclick="showResourceInfo('weapons')">
+                            <div class="resource-icon weapons">🔫</div>
+                            <span id="weapons">15</span>
+                        </div>
+                        <div class="resource" onclick="showResourceInfo('influence')">
+                            <div class="resource-icon influence">👑</div>
+                            <span id="influence">75</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="nav-tabs">
+                <div class="nav-tab active" data-tab="territory">🏭 Território</div>
+                <div class="nav-tab" data-tab="operations">⚔️ Operações</div>
+                <div class="nav-tab" data-tab="research">🧪 Pesquisas</div>
+                <div class="nav-tab" data-tab="world">🌆 Cidade</div>
+                <div class="nav-tab" data-tab="cartel">🤝 Cartel</div>
+                <div class="nav-tab" data-tab="intelligence">🕵️ Intel</div>
+            </div>
+        </div>
+
+        <!-- Main Game Area -->
+        <div class="game-area">
+            <!-- Territory View -->
+            <div class="view territory-view active" id="territoryView">
+                <!-- Buildings will be dynamically added here -->
+            </div>
+
+            <!-- World Map View -->
+            <div class="view world-view" id="worldView">
+                <!-- Territories will be dynamically added here -->
+            </div>
+
+            <!-- Operations View -->
+            <div class="view operations-view" id="operationsView">
+                <div class="operation-section">
+                    <h2 style="color: #FFD700; text-align: center; margin-bottom: 20px;">👥 Sua Organização</h2>
+                    <div class="unit-grid" id="organizationGrid">
+                        <!-- Organization units will be added here -->
+                    </div>
+                </div>
+
+                <div class="operation-section">
+                    <h2 style="color: #FFD700; text-align: center; margin-bottom: 20px;">📋 Recrutar Pessoal</h2>
+                    <div class="unit-grid" id="recruitGrid">
+                        <!-- Recruitment options will be added here -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Research View -->
+            <div class="view research-view" id="researchView">
+                <h2 style="color: #FFD700; text-align: center; margin-bottom: 30px;">🧪 Pesquisa & Desenvolvimento</h2>
+                <div class="tech-tree" id="techTree">
+                    <!-- Research options will be added here -->
+                </div>
+            </div>
+
+            <!-- Cartel View -->
+            <div class="view" id="cartelView">
+                <div style="padding: 20px; color: #FFD700; text-align: center;">
+                    <h2>🤝 Sistema de Cartel</h2>
+                    <p>Alianças entre organizações criminosas em desenvolvimento...</p>
+                    <div class="operation-section" style="margin-top: 30px;">
+                        <h3>🏴‍☠️ Cartéis Disponíveis</h3>
+                        <div class="rival-operation">
+                            <div>
+                                <strong>Los Hermanos</strong><br>
+                                <small>Especialistas em tráfico internacional</small>
+                            </div>
+                            <button class="action-btn purple-btn" onclick="showNotification('🤝 Sistema em desenvolvimento!')">🤝 Propor Aliança</button>
+                        </div>
+                        <div class="rival-operation">
+                            <div>
+                                <strong>Máfia Italiana</strong><br>
+                                <small>Controla lavagem de dinheiro</small>
+                            </div>
+                            <button class="action-btn gold-btn" onclick="showNotification('💰 Sistema em desenvolvimento!')">💰 Negociar</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Intelligence View -->
+            <div class="view" id="intelligenceView">
+                <div style="padding: 20px; color: #FFD700;">
+                    <h2 style="text-align: center;">🕵️ Central de Inteligência</h2>
+                    <div class="operation-section">
+                        <h3>📊 Relatórios de Espionagem</h3>
+                        <div class="rival-operation">
+                            <div>
+                                <strong>🎯 Operação Vigilância</strong><br>
+                                <small>Monitoramento de rivais ativos</small>
+                            </div>
+                            <button class="action-btn green-btn" onclick="showIntelReport()">📋 Ver Relatório</button>
+                        </div>
+                        <div class="rival-operation">
+                            <div>
+                                <strong>🔍 Análise de Mercado</strong><br>
+                                <small>Tendências e oportunidades</small>
+                            </div>
+                            <button class="action-btn purple-btn" onclick="showMarketAnalysis()">📈 Analisar</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Side Panel -->
+            <div class="side-panel" id="sidePanel">
+                <div class="panel-section">
+                    <div class="panel-title">📊 Status do Cartel</div>
+                    <div class="building-stats">
+                        <div class="stat">
+                            <div>Território</div>
+                            <div id="territoryControl">45%</div>
+                        </div>
+                        <div class="stat">
+                            <div>Reputação</div>
+                            <div id="reputation">⭐ 8.2</div>
+                        </div>
+                        <div class="stat">
+                            <div>Membros</div>
+                            <div id="members">127</div>
+                        </div>
+                        <div class="stat">
+                            <div>Ranking</div>
+                            <div id="ranking">#3</div>
+                        </div>
+                    </div>
+                    
+                    <div style="margin: 15px 0;">
+                        <strong>Nível de Risco:</strong>
+                        <div class="risk-meter">
+                            <div class="risk-fill" id="riskMeter" style="width: 25%;"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="panel-section building-info" id="buildingInfo">
+                    <div class="panel-title">🏢 Quartel General</div>
+                    <h3>Nível 3</h3>
+                    <p>Centro de comando do seu império criminoso. Coordena todas as operações.</p>
+                    
+                    <div class="building-stats">
+                        <div class="stat">
+                            <div>Capacidade</div>
+                            <div>150 membros</div>
+                        </div>
+                        <div class="stat">
+                            <div>Próximo Nível</div>
+                            <div>200 membros</div>
+                        </div>
+                    </div>
+
+                    <div style="margin: 15px 0;">
+                        <strong>Custo do Upgrade:</strong><br>
+                        💰 $50.000 🔫 25 armas 👑 15 influência
+                    </div>
+
+                    <button class="upgrade-btn" onclick="upgradeBuilding('headquarters')">
+                        ⬆️ Expandir Operação
+                    </button>
+                </div>
+
+                <div class="panel-section">
+                    <div class="panel-title">📈 Produção/Hora</div>
+                    <div class="building-stats">
+                        <div class="stat">
+                            <div>💊 Drogas</div>
+                            <div id="drugsProduction">+8kg</div>
+                        </div>
+                        <div class="stat">
+                            <div>💰 Dinheiro</div>
+                            <div id="moneyProduction">+$2.5K</div>
+                        </div>
+                        <div class="stat">
+                            <div>🔫 Armas</div>
+                            <div id="weaponsProduction">+3</div>
+                        </div>
+                        <div class="stat">
+                            <div>👑 Influência</div>
+                            <div id="influenceProduction">+2</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="panel-section">
+                    <div class="panel-title">🚨 Atividade Policial</div>
+                    <div class="building-stats">
+                        <div class="stat">
+                            <div>Batidas</div>
+                            <div>3 esta semana</div>
+                        </div>
+                        <div class="stat">
+                            <div>Investigações</div>
+                            <div>2 ativas</div>
+                        </div>
+                    </div>
+                    <button class="action-btn purple-btn" onclick="showPoliceActivity()">
+                        🕵️ Ver Intel Policial
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal -->
+    <div class="modal" id="gameModal">
+        <div class="modal-content">
+            <button class="close-btn" onclick="closeModal()">&times;</button>
+            <div class="modal-header" id="modalHeader">Título</div>
+            <div id="modalBody">Conteúdo do modal</div>
+        </div>
+    </div>
+
+    <script>
+        // Game State com Save/Load automático
+        let gameState = {
+            resources: {
+                drugs: 50,      // kg
+                money: 25000,   // dollars
+                weapons: 15,    // units
+                influence: 75   // points
+            },
+            buildings: {
+                headquarters: { level: 3, x: 200, y: 150 },
+                lab: { level: 2, x: 350, y: 200 },
+                warehouse: { level: 2, x: 100, y: 250 },
+                safehouse: { level: 1, x: 400, y: 120 },
+                dealership: { level: 1, x: 150, y: 350 },
+                armory: { level: 1, x: 320, y: 280 },
+                laundry: { level: 1, x: 450, y: 320 },
+                lookout: { level: 1, x: 50, y: 150 }
+            },
+            organization: {
+                chemist: 8,
+                dealer: 15,
+                enforcer: 12,
+                lieutenant: 3
+            },
+            research: {
+                chemistry: { completed: true, level: 2 },
+                security: { completed: true, level: 1 },
+                distribution: { completed: false, level: 0 },
+                corruption: { completed: false, level: 0 },
+                manufacturing: { completed: false, level: 0 },
+                intelligence: { completed: false, level: 0 }
+            },
+            territoryControl: 45,
+            reputation: 8.2,
+            members: 127,
+            ranking: 3,
+            riskLevel: 25,
+            currentView: 'territory',
+            version: '1.0.0'
+        };
+
+        // Building definitions
+        const buildingTypes = {
+            headquarters: { 
+                name: 'Quartel General', 
+                icon: '🏢', 
+                baseProduction: { influence: 2 },
+                upgradeCost: { money: 50000, weapons: 25, influence: 15 },
+                description: 'Centro de comando do seu império. Coordena todas as operações.'
+            },
+            lab: { 
+                name: 'Laboratório', 
+                icon: '🧪', 
+                baseProduction: { drugs: 4 },
+                upgradeCost: { money: 30000, influence: 10 },
+                description: 'Produz drogas sintéticas de alta qualidade.'
+            },
+            warehouse: { 
+                name: 'Depósito', 
+                icon: '📦', 
+                baseProduction: {},
+                upgradeCost: { money: 20000, weapons: 15 },
+                description: 'Armazena produtos e esconde evidências.'
+            },
+            safehouse: { 
+                name: 'Casa Segura', 
+                icon: '🏠', 
+                baseProduction: {},
+                upgradeCost: { money: 25000, influence: 8 },
+                description: 'Refúgio para membros em perigo.'
+            },
+            dealership: { 
+                name: 'Ponto de Venda', 
+                icon: '🏪', 
+                baseProduction: { money: 1200 },
+                upgradeCost: { money: 35000, drugs: 20, influence: 12 },
+                description: 'Distribui produtos nas ruas.'
+            },
+            armory: { 
+                name: 'Arsenal', 
+                icon: '🔫', 
+                baseProduction: { weapons: 2 },
+                upgradeCost: { money: 40000, influence: 20 },
+                description: 'Armazena e mantém armamento pesado.'
+            },
+            laundry: { 
+                name: 'Lavanderia', 
+                icon: '🏦', 
+                baseProduction: { money: 800 },
+                upgradeCost: { money: 60000, influence: 25 },
+                description: 'Lava dinheiro através de negócios legítimos.'
+            },
+            lookout: { 
+                name: 'Ponto de Observação', 
+                icon: '👁️', 
+                baseProduction: {},
+                upgradeCost: { money: 15000, weapons: 10 },
+                description: 'Monitora atividade policial e rivais.'
+            }
+        };
+
+        // Unit definitions
+        const unitTypes = {
+            chemist: {
+                name: 'Químico',
+                icon: '👨‍🔬',
+                cost: { money: 5000, influence: 5 },
+                skill: 'Produção de drogas',
+                description: 'Especialista em síntese química.',
+                bonus: '+25% produção de drogas'
+            },
+            dealer: {
+                name: 'Traficante',
+                icon: '🕴️',
+                cost: { money: 3000, drugs: 2 },
+                skill: 'Vendas',
+                description: 'Distribui produtos nas ruas.',
+                bonus: '+15% receita de vendas'
+            },
+            enforcer: {
+                name: 'Capanga',
+                icon: '💪',
+                cost: { money: 4000, weapons: 3 },
+                skill: 'Combate',
+                description: 'Protege território e intimida rivais.',
+                bonus: '+20% defesa territorial'
+            },
+            lieutenant: {
+                name: 'Tenente',
+                icon: '👔',
+                cost: { money: 10000, influence: 10 },
+                skill: 'Liderança',
+                description: 'Coordena operações complexas.',
+                bonus: '+30% eficiência geral'
+            }
+        };
+
+        // Research definitions
+        const researchTypes = {
+            chemistry: {
+                name: 'Química Avançada',
+                icon: '⚗️',
+                cost: { money: 15000, drugs: 10 },
+                description: 'Melhora qualidade e pureza das drogas',
+                benefits: 'Produção de drogas +40%'
+            },
+            security: {
+                name: 'Segurança',
+                icon: '🛡️',
+                cost: { money: 20000, weapons: 15 },
+                description: 'Reduz risco de batidas policiais',
+                benefits: 'Risco policial -30%'
+            },
+            distribution: {
+                name: 'Rede de Distribuição',
+                icon: '🚚',
+                cost: { money: 25000, influence: 15 },
+                description: 'Expande rotas de tráfico',
+                benefits: 'Receita de vendas +50%'
+            },
+            corruption: {
+                name: 'Corrupção',
+                icon: '🤝',
+                cost: { money: 40000, influence: 25 },
+                description: 'Suborna autoridades',
+                benefits: 'Imunidade policial temporária'
+            },
+            manufacturing: {
+                name: 'Produção em Massa',
+                icon: '🏭',
+                cost: { money: 30000, drugs: 25 },
+                description: 'Automatiza produção de drogas',
+                benefits: 'Produção 24/7 sem químicos'
+            },
+            intelligence: {
+                name: 'Rede de Espionagem',
+                icon: '🕵️',
+                cost: { money: 35000, influence: 20 },
+                description: 'Obtém informações sobre rivais',
+                benefits: 'Ataques +60% precisão'
+            }
+        };
+
+        // Loading screen management
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                document.getElementById('loadingScreen').style.display = 'none';
+                document.getElementById('gameContainer').style.display = 'flex';
+                initGame();
+            }, 3500);
+        });
+
+        // Save/Load System
+        function saveGame() {
+            try {
+                localStorage.setItem('cartelEmpire', JSON.stringify(gameState));
+            } catch (e) {
+                console.log('Save failed:', e);
+            }
+        }
+
+        function loadGame() {
+            try {
+                const savedGame = localStorage.getItem('cartelEmpire');
+                if (savedGame) {
+                    const loadedState = JSON.parse(savedGame);
+                    gameState = { ...gameState, ...loadedState };
+                    showNotification('🎮 Progresso carregado!');
+                }
+            } catch (e) {
+                console.log('Load failed:', e);
+                showNotification('⚠️ Erro ao carregar save. Novo jogo iniciado.');
+            }
+        }
+
+        // Auto-save every 30 seconds
+        setInterval(saveGame, 30000);
+
+        // Initialize game
+        function initGame() {
+            loadGame();
+            
+            updateDateTime();
+            renderBuildings();
+            renderWorldMap();
+            renderOperations();
+            renderResearch();
+            updateResources();
+            updateProductionDisplay();
+            updateRiskLevel();
+            startResourceProduction();
+            startPoliceActivity();
+            
+            setInterval(updateDateTime, 1000);
+            setInterval(updateRiskLevel, 10000);
+            setInterval(() => {
+                if (Math.random() < 0.1) {
+                    triggerRandomEvent();
+                }
+            }, 45000);
+        }
+
+        function updateDateTime() {
+            const now = new Date();
+            const formatted = now.toLocaleString('pt-BR');
+            document.getElementById('datetime').textContent = formatted;
+        }
+
+        function renderBuildings() {
+            const territoryView = document.getElementById('territoryView');
+            territoryView.querySelectorAll('.building').forEach(b => b.remove());
+
+            Object.entries(gameState.buildings).forEach(([type, building]) => {
+                const buildingEl = createBuildingElement(type, building);
+                territoryView.appendChild(buildingEl);
+            });
+        }
+
+        function createBuildingElement(type, building) {
+            const buildingEl = document.createElement('div');
+            buildingEl.className = `building ${type}`;
+            buildingEl.style.left = building.x + 'px';
+            buildingEl.style.top = building.y + 'px';
+            
+            const buildingType = buildingTypes[type];
+            buildingEl.innerHTML = `
+                <div class="building-sprite ${type}">
+                    ${buildingType.icon}
+                    <div class="building-level">${building.level}</div>
+                </div>
+            `;
+
+            buildingEl.addEventListener('click', () => selectBuilding(type));
+            buildingEl.addEventListener('mouseenter', (e) => showTooltip(e, type, building));
+            buildingEl.addEventListener('mouseleave', hideTooltip);
+
+            return buildingEl;
+        }
+
+        function renderWorldMap() {
+            const worldView = document.getElementById('worldView');
+            worldView.innerHTML = '';
+
+            const territories = [
+                { x: 200, y: 150, type: 'player', name: 'Seu Território', control: 100 },
+                { x: 400, y: 100, type: 'enemy', name: 'Cartel Los Hermanos', control: 0 },
+                { x: 150, y: 300, type: 'neutral', name: 'Zona Neutra', control: 0 },
+                { x: 500, y: 250, type: 'cartel', name: 'Aliados da Máfia', control: 30 },
+                { x: 300, y: 350, type: 'enemy', name: 'Gangue Rival', control: 0 },
+                { x: 100, y: 100, type: 'neutral', name: 'Porto Comercial', control: 0 },
+                { x: 450, y: 350, type: 'player', name: 'Território Expandido', control: 75 }
+            ];
+
+            territories.forEach(territory => {
+                const territoryEl = document.createElement('div');
+                territoryEl.className = `territory ${territory.type}`;
+                territoryEl.style.left = territory.x + 'px';
+                territoryEl.style.top = territory.y + 'px';
+                
+                const icon = territory.type === 'player' ? '👑' : 
+                           territory.type === 'enemy' ? '💀' : 
+                           territory.type === 'cartel' ? '🤝' : '🏢';
+                           
+                territoryEl.textContent = icon;
+                
+                territoryEl.addEventListener('click', () => {
+                    if (territory.type === 'enemy') {
+                        attackTerritory(territory);
+                    } else if (territory.type === 'neutral') {
+                        expandTerritory(territory);
+                    } else {
+                        showTerritoryInfo(territory);
+                    }
+                });
+
+                territoryEl.addEventListener('mouseenter', (e) => {
+                    showTooltip(e, 'territory', territory);
+                });
+                territoryEl.addEventListener('mouseleave', hideTooltip);
+
+                worldView.appendChild(territoryEl);
+            });
+        }
+
+        function renderOperations() {
+            const organizationGrid = document.getElementById('organizationGrid');
+            const recruitGrid = document.getElementById('recruitGrid');
+            
+            organizationGrid.innerHTML = '';
+            recruitGrid.innerHTML = '';
+
+            // Show current organization
+            Object.entries(gameState.organization).forEach(([unitType, count]) => {
+                const unit = unitTypes[unitType];
+                const unitCard = document.createElement('div');
+                unitCard.className = 'unit-card';
+                unitCard.innerHTML = `
+                    <div class="unit-icon">${unit.icon}</div>
+                    <h4>${unit.name}</h4>
+                    <p>Quantidade: <strong>${count}</strong></p>
+                    <p>${unit.skill}</p>
+                    <p><small>${unit.bonus}</small></p>
+                    <button class="action-btn purple-btn" onclick="deployUnit('${unitType}')">
+                        🎯 Enviar Missão
+                    </button>
+                `;
+                organizationGrid.appendChild(unitCard);
+            });
+
+            // Show recruitment options
+            Object.entries(unitTypes).forEach(([unitType, unit]) => {
+                const unitCard = document.createElement('div');
+                unitCard.className = 'unit-card';
+                const canAfford = canAffordUnit(unitType);
+                
+                unitCard.innerHTML = `
+                    <div class="unit-icon">${unit.icon}</div>
+                    <h4>${unit.name}</h4>
+                    <p>${unit.description}</p>
+                    <p><small>${formatCosts(unit.cost)}</small></p>
+                    <div>
+                        <input type="number" class="game-input" id="recruit_${unitType}" min="1" max="5" value="1" style="width: 70px; display: inline-block; margin-right: 10px;">
+                        <button class="action-btn green-btn ${!canAfford ? 'disabled' : ''}" 
+                                onclick="recruitMultipleUnits('${unitType}')" 
+                                ${!canAfford ? 'disabled' : ''}>
+                            👥 Recrutar
+                        </button>
+                    </div>
+                `;
+                recruitGrid.appendChild(unitCard);
+            });
+        }
+
+        function renderResearch() {
+            const techTree = document.getElementById('techTree');
+            techTree.innerHTML = '';
+
+            Object.entries(researchTypes).forEach(([techType, tech]) => {
+                const research = gameState.research[techType];
+                const canAfford = canAffordResearch(techType);
+                const isLocked = !canResearch(techType);
+                
+                const techCard = document.createElement('div');
+                techCard.className = `tech-card ${research.completed ? 'researched' : ''} ${isLocked ? 'locked' : ''}`;
+                
+                techCard.innerHTML = `
+                    <div style="font-size: 40px; margin-bottom: 10px;">${tech.icon}</div>
+                    <h3>${tech.name}</h3>
+                    <p style="font-size: 12px; margin: 10px 0;">${tech.description}</p>
+                    <p style="font-size: 10px; color: #FFD700;">${tech.benefits}</p>
+                    ${!research.completed && !isLocked ? `
+                        <div style="margin-top: 15px;">
+                            <small>${formatCosts(tech.cost)}</small>
+                            <button class="action-btn ${!canAfford ? 'disabled' : ''}" 
+                                    onclick="startResearch('${techType}')" 
+                                    ${!canAfford ? 'disabled' : ''}>
+                                🧪 Pesquisar
+                            </button>
+                        </div>
+                    ` : ''}
+                    ${research.completed ? '<p style="color: #32CD32; font-weight: bold;">✅ Concluído</p>' : ''}
+                    ${isLocked ? '<p style="color: #FF6347;">🔒 Bloqueado</p>' : ''}
+                `;
+                
+                techTree.appendChild(techCard);
+            });
+        }
+
+        function selectBuilding(type) {
+            const building = gameState.buildings[type];
+            const buildingType = buildingTypes[type];
+            
+            document.getElementById('buildingInfo').innerHTML = `
+                <div class="panel-title">${buildingType.icon} ${buildingType.name}</div>
+                <h3>Nível ${building.level}</h3>
+                <p>${buildingType.description}</p>
+                
+                <div class="building-stats">
+                    <div class="stat">
+                        <div>Nível Atual</div>
+                        <div>${building.level}</div>
+                    </div>
+                    <div class="stat">
+                        <div>Próximo Nível</div>
+                        <div>${building.level + 1}</div>
+                    </div>
+                </div>
+
+                <div style="margin: 15px 0;">
+                    <strong>Custo do Upgrade:</strong><br>
+                    ${formatCosts(calculateUpgradeCost(type))}
+                </div>
+
+                <button class="upgrade-btn ${canAffordUpgrade(type) ? '' : 'disabled'}" 
+                        onclick="upgradeBuilding('${type}')" 
+                        ${!canAffordUpgrade(type) ? 'disabled' : ''}>
+                    ⬆️ Expandir Operação
+                </button>
+                
+                ${type === 'headquarters' ? `
+                    <button class="action-btn gold-btn" onclick="showCartelStats()">
+                        📊 Relatório Completo
+                    </button>
+                ` : ''}
+            `;
+        }
+
+        function formatCosts(costs) {
+            const icons = { 
+                drugs: '💊', 
+                money: '💰 $', 
+                weapons: '🔫', 
+                influence: '👑' 
+            };
+            return Object.entries(costs)
+                .map(([resource, amount]) => {
+                    if (resource === 'money') {
+                        return `${icons[resource]}${amount.toLocaleString()}`;
+                    }
+                    return `${icons[resource]} ${amount}`;
+                })
+                .join(' ');
+        }
+
+        function canAffordUpgrade(type) {
+            const costs = calculateUpgradeCost(type);
+            return Object.entries(costs).every(([resource, amount]) => 
+                gameState.resources[resource] >= amount
+            );
+        }
+
+        function canAffordUnit(unitType) {
+            const costs = unitTypes[unitType].cost;
+            return Object.entries(costs).every(([resource, amount]) => 
+                gameState.resources[resource] >= amount
+            );
+        }
+
+        function canAffordResearch(techType) {
+            const costs = researchTypes[techType].cost;
+            return Object.entries(costs).every(([resource, amount]) => 
+                gameState.resources[resource] >= amount
+            );
+        }
+
+        function canResearch(techType) {
+            const prerequisites = {
+                distribution: ['chemistry'],
+                manufacturing: ['chemistry', 'security'],
+                intelligence: ['security'],
+                corruption: ['security', 'distribution']
+            };
+
+            if (!prerequisites[techType]) return true;
+            
+            return prerequisites[techType].every(prereq => 
+                gameState.research[prereq].completed
+            );
+        }
+
+        function calculateUpgradeCost(type) {
+            const baseCost = buildingTypes[type].upgradeCost;
+            const level = gameState.buildings[type].level;
+            const multiplier = Math.pow(1.8, level - 1);
+            
+            const adjustedCost = {};
+            Object.entries(baseCost).forEach(([resource, amount]) => {
+                adjustedCost[resource] = Math.floor(amount * multiplier);
+            });
+            
+            return adjustedCost;
+        }
+
+        function upgradeBuilding(type) {
+            if (!canAffordUpgrade(type)) return;
+
+            const costs = calculateUpgradeCost(type);
+            
+            Object.entries(costs).forEach(([resource, amount]) => {
+                gameState.resources[resource] -= amount;
+            });
+
+            gameState.buildings[type].level++;
+            gameState.riskLevel += 5;
+
+            const buildingEl = document.querySelector(`.building.${type}`);
+            buildingEl.classList.add('upgrading');
+            setTimeout(() => buildingEl.classList.remove('upgrading'), 2000);
+
+            updateResources();
+            updateProductionDisplay();
+            renderBuildings();
+            selectBuilding(type);
+            saveGame();
+
+            showResourcePopup(buildingEl, '⬆️ UPGRADE!', '#32CD32');
+            showNotification(`${buildingTypes[type].name} expandida com sucesso!`);
+        }
+
+        function recruitMultipleUnits(unitType) {
+            const quantity = parseInt(document.getElementById(`recruit_${unitType}`).value) || 1;
+            if (!canAffordUnit(unitType)) return;
+
+            const costs = unitTypes[unitType].cost;
+            
+            for (let i = 0; i < quantity; i++) {
+                if (!canAffordUnit(unitType)) break;
+                
+                Object.entries(costs).forEach(([resource, amount]) => {
+                    gameState.resources[resource] -= amount;
+                });
+                gameState.organization[unitType] = (gameState.organization[unitType] || 0) + 1;
+            }
+
+            gameState.members = Object.values(gameState.organization).reduce((sum, count) => sum + count, 0);
+            gameState.riskLevel += quantity * 2;
+
+            updateResources();
+            renderOperations();
+            saveGame();
+
+            showNotification(`${quantity}x ${unitTypes[unitType].name} recrutado(s)!`);
+        }
+
+        function startResearch(techType) {
+            if (!canAffordResearch(techType) || !canResearch(techType)) return;
+
+            const costs = researchTypes[techType].cost;
+            
+            Object.entries(costs).forEach(([resource, amount]) => {
+                gameState.resources[resource] -= amount;
+            });
+
+            gameState.research[techType].completed = true;
+            gameState.research[techType].level = 1;
+
+            updateResources();
+            updateProductionDisplay();
+            renderResearch();
+            saveGame();
+
+            showNotification(`🧪 Pesquisa ${researchTypes[techType].name} concluída!`);
+        }
+
+        function updateResources() {
+            Object.entries(gameState.resources).forEach(([resource, amount]) => {
+                document.getElementById(resource).textContent = amount.toLocaleString();
+            });
+            
+            document.getElementById('territoryControl').textContent = gameState.territoryControl + '%';
+            document.getElementById('reputation').textContent = '⭐ ' + gameState.reputation;
+            document.getElementById('members').textContent = gameState.members;
+            document.getElementById('ranking').textContent = '#' + gameState.ranking;
+        }
+
+        function updateProductionDisplay() {
+            const production = calculateProduction();
+            
+            document.getElementById('drugsProduction').textContent = `+${production.drugs}kg`;
+            document.getElementById('moneyProduction').textContent = `+$${production.money.toLocaleString()}`;
+            document.getElementById('weaponsProduction').textContent = `+${production.weapons}`;
+            document.getElementById('influenceProduction').textContent = `+${production.influence}`;
+        }
+
+        function updateRiskLevel() {
+            gameState.riskLevel = Math.min(100, gameState.riskLevel + Math.random() * 2);
+            
+            if (gameState.research.security.completed) {
+                gameState.riskLevel = Math.max(0, gameState.riskLevel - 1);
+            }
+
+            const riskMeter = document.getElementById('riskMeter');
+            const riskLevelSpan = document.getElementById('riskLevel');
+            const alertLevel = document.getElementById('alertLevel');
+
+            riskMeter.style.width = gameState.riskLevel + '%';
+
+            if (gameState.riskLevel < 30) {
+                riskLevelSpan.textContent = 'BAIXO';
+                alertLevel.className = 'alert-level';
+            } else if (gameState.riskLevel < 70) {
+                riskLevelSpan.textContent = 'MÉDIO';
+                alertLevel.className = 'alert-level';
+            } else {
+                riskLevelSpan.textContent = 'ALTO';
+                alertLevel.className = 'alert-level alert-high';
+            }
+        }
+
+        function startResourceProduction() {
+            setInterval(() => {
+                const production = calculateProduction();
+                
+                Object.entries(production).forEach(([resource, amount]) => {
+                    if (amount > 0) {
+                        gameState.resources[resource] += amount;
+                        
+                        if (Math.random() < 0.2) {
+                            const buildings = Object.keys(gameState.buildings);
+                            const randomBuilding = buildings[Math.floor(Math.random() * buildings.length)];
+                            const buildingEl = document.querySelector(`.building.${randomBuilding}`);
+                            if (buildingEl) {
+                                showResourcePopup(buildingEl, `+${amount}`, '#32CD32');
+                            }
+                        }
+                    }
+                });
+
+                updateResources();
+                saveGame();
+            }, 8000);
+        }
+
+        function startPoliceActivity() {
+            setInterval(() => {
+                if (gameState.riskLevel > 70 && Math.random() < 0.3) {
+                    policeRai
