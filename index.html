@@ -191,18 +191,20 @@
             flex: 1;
             position: relative;
             overflow: hidden;
-            cursor: grab;
-        }
-
-        .world-view:active {
-            cursor: grabbing;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: radial-gradient(circle at center, #4fc3f7 0%, #1976d2 100%);
         }
 
         .world-view svg {
-            width: 100%;
-            height: 100%;
+            max-width: 100%;
+            max-height: 100%;
+            width: auto;
+            height: auto;
             transition: transform 0.3s ease;
             transform-origin: center center;
+            display: block;
         }
 
         .territory {
@@ -1512,7 +1514,6 @@
             
             updateDateTime();
             renderBuildings();
-            renderWorldMap();
             renderOperations();
             renderResearch();
             updateResources();
@@ -1520,6 +1521,9 @@
             updateRiskLevel();
             startResourceProduction();
             startPoliceActivity();
+            
+            // Initialize with territory view only
+            switchView('territory');
             
             setInterval(updateDateTime, 1000);
             setInterval(updateRiskLevel, 10000);
@@ -1577,21 +1581,36 @@
                 worldView.appendChild(controls);
             }
 
-            // Add SVG map
+            // Add SVG map container
             const mapContainer = document.createElement('div');
-            mapContainer.innerHTML = getWorldMapSVG();
             mapContainer.style.width = '100%';
             mapContainer.style.height = '100%';
+            mapContainer.style.display = 'flex';
+            mapContainer.style.alignItems = 'center';
+            mapContainer.style.justifyContent = 'center';
             mapContainer.style.position = 'relative';
             
+            // Insert SVG
+            mapContainer.innerHTML = getWorldMapSVG();
             worldView.appendChild(mapContainer);
+
+            // Style the SVG for proper centering
+            const svg = mapContainer.querySelector('svg');
+            if (svg) {
+                svg.style.maxWidth = '100%';
+                svg.style.maxHeight = '100%';
+                svg.style.width = 'auto';
+                svg.style.height = 'auto';
+                svg.style.display = 'block';
+            }
 
             // Add city markers
             worldCities.forEach(city => {
                 const marker = document.createElement('div');
                 marker.className = `city-marker ${city.type}`;
-                marker.style.left = city.x + 'px';
-                marker.style.top = city.y + 'px';
+                marker.style.position = 'absolute';
+                marker.style.left = (city.x / 2000 * 100) + '%';
+                marker.style.top = (city.y / 1200 * 100) + '%';
                 marker.title = `${city.name}, ${city.country}`;
                 
                 // Different colors for different types
@@ -2112,19 +2131,32 @@
         }
 
         function switchView(viewName) {
+            // Hide all views
             document.querySelectorAll('.view').forEach(view => {
                 view.classList.remove('active');
+                view.style.display = 'none';
             });
             
-            document.getElementById(viewName + 'View').classList.add('active');
+            // Show selected view
+            const targetView = document.getElementById(viewName + 'View');
+            if (targetView) {
+                targetView.classList.add('active');
+                targetView.style.display = 'flex';
+            }
+            
             gameState.currentView = viewName;
             
+            // Update nav tabs
             document.querySelectorAll('.nav-tab').forEach(tab => {
                 tab.classList.remove('active');
             });
-            document.querySelector(`[data-tab="${viewName}"]`).classList.add('active');
+            
+            const activeTab = document.querySelector(`[data-tab="${viewName}"]`);
+            if (activeTab) {
+                activeTab.classList.add('active');
+            }
 
-            // Re-render world map when switching to it
+            // Re-render world map ONLY when switching to world view
             if (viewName === 'world') {
                 setTimeout(renderWorldMap, 100);
             }
