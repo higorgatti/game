@@ -1613,32 +1613,7 @@
                 mapContainer.appendChild(marker);
             });
 
-            // Add drag functionality to world map
-            let isDragging = false;
-            let dragStart = { x: 0, y: 0 };
-
-            worldView.addEventListener('mousedown', (e) => {
-                if (e.target === worldView || e.target.tagName === 'svg' || e.target.closest('svg')) {
-                    isDragging = true;
-                    dragStart.x = e.clientX - gameState.worldMapPosition.x;
-                    dragStart.y = e.clientY - gameState.worldMapPosition.y;
-                }
-            });
-
-            document.addEventListener('mousemove', (e) => {
-                if (!isDragging) return;
-                
-                gameState.worldMapPosition.x = e.clientX - dragStart.x;
-                gameState.worldMapPosition.y = e.clientY - dragStart.y;
-                
-                updateWorldMapTransform();
-            });
-
-            document.addEventListener('mouseup', () => {
-                isDragging = false;
-            });
-
-            // Add zoom functionality
+            // Add only zoom functionality (no drag)
             worldView.addEventListener('wheel', (e) => {
                 e.preventDefault();
                 const zoomFactor = e.deltaY > 0 ? 0.9 : 1.1;
@@ -1651,18 +1626,18 @@
         function updateWorldMapTransform() {
             const svg = document.querySelector('#worldView svg');
             if (svg) {
-                svg.style.transform = `scale(${gameState.worldMapZoom}) translate(${gameState.worldMapPosition.x}px, ${gameState.worldMapPosition.y}px)`;
+                svg.style.transform = `scale(${gameState.worldMapZoom})`;
+                svg.style.transformOrigin = 'center center';
             }
         }
 
         function zoomWorldMap(factor) {
             gameState.worldMapZoom *= factor;
-            gameState.worldMapZoom = Math.max(0.5, Math.min(3, gameState.worldMapZoom));
+            gameState.worldMapZoom = Math.max(0.5, Math.min(2, gameState.worldMapZoom));
             updateWorldMapTransform();
         }
 
         function centerWorldMap() {
-            gameState.worldMapPosition = { x: 0, y: 0 };
             gameState.worldMapZoom = 1;
             updateWorldMapTransform();
         }
